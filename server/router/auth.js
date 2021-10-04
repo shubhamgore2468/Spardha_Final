@@ -1,7 +1,7 @@
 const express = require('express');
-
+const bcrypt = require('bcryptjs')
 const router = express.Router();
-
+const jwt = require('jsonwebtoken')
 require('../db/conn')
 const User = require('../model/userSchema');
 
@@ -12,10 +12,10 @@ router.get('/', (req, res) => {
 //using promises
 // router.post('/register',  (req, res) =>{
 
-//     const {name, email, phone, work, password, cpassword} = req.body;
+//     const {name, email, phone, password, cpassword} = req.body;
 
 //     //console.log(name)
-//     if(!name || !email || !phone || !work || !password || !cpassword){
+//     if(!name || !email || !phone || !w !password || !cpassword){
 //         return res.status(422).json({err:" pls fill field"})
 //     }
 
@@ -27,7 +27,7 @@ router.get('/', (req, res) => {
 //         if(userExists){
 //             return res.status(422).json({ error: " email already exists"});
 //         }
-//         const user = new User({name, email, phone, work, password, cpassword})
+//         const user = new User({name, email, phone, password, cpassword})
 
 //         user.save().then(()=> {
 //             res.status(201).json({ message : "user registered"})
@@ -35,12 +35,12 @@ router.get('/', (req, res) => {
 //     }).catch((err) => {console.log(err)});
 // });
 
-router.post('/register', async (req, res) =>{
+router.post('/signup', async (req, res) =>{
 
-    const {name, email, phone, work, password, cpassword} = req.body;
+    const {name, email, phone, password, cpassword} = req.body;
 
     //console.log(name)
-    if(!name || !email || !phone || !work || !password || !cpassword){
+    if(!name || !email || !phone ||  !password || !cpassword){
         return res.status(422).json({err:" pls fill field"})
     }
 
@@ -49,24 +49,64 @@ router.post('/register', async (req, res) =>{
     
         if(userExists){
             return res.status(422).json({ error: " email already exists"});
-        }
+        } else if(password !== cpassword){
+            return res.status(422).json({ error: " password not matching"});
+        } else {
+            const user = new User({name, email, phone, password, cpassword});
 
-        const user = new User({name, email, phone, work, password, cpassword})
+            //hashing pwd
+            await user.save();
 
-        const userRegistered = await user.save();
-
-        if(userRegistered){
-            res.status(201).json({ message : "user registered"})
+            res.status(201).json({ message: " user registered successfully"});
         }
         
-
     }catch(err){
         console.log(err)
     }
-
-    // console.log(req.body);
-    // res.json({message:req.body});
-    X
+    
 });
+
+//login route
+
+router.post('/login', async (req, res) =>{
+    // console.log(req.body);
+    // res.json({message:"awesome"});
+
+    try{
+        let token;
+        const {email, password} = req.body;
+
+        if(!email || !password){
+            return res.status(400).json({ message : "pls fill data"})
+        }
+
+        const userLogin = await User.findOne({email: email});
+
+        if(userLogin){
+
+            const isMatch = await bcrypt.compare(password, userLogin.password);
+
+            token = await userLogin.generateAuthToken();
+
+            res.cookie("jwtoken", token, {
+                expires:new Date(Date.now() + 25892000000),
+                httpOnly: true
+            });
+
+            if(!isMatch){
+                res.status(200).json({error: "Invalid credentials"});
+            }else {
+                res.json({message: "user signin successfully"});
+            }
+        } else{
+            res.status(200).json({error: "Invalid credentials"});
+        }
+
+        //await user.save();  
+
+    } catch(err){
+        console.log(err)
+    }
+})
 
 module.exports = router;

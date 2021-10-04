@@ -10,7 +10,7 @@ app.use(express.json())
 
 app.use(require('./router/auth.js'));
 
-const User = require('./model/userSchema')
+const User = require('./model/userSchema') 
 
 const PORT = process.env.PORT;
 
@@ -33,13 +33,13 @@ const PORT = process.env.PORT;
         res.send("Hello from contact us page");
     })
 
-    app.get('/signin', (req, res) => {
+    app.get('/login', (req, res) => {
         res.send("Hello from signin page");
     })
 
-    // app.get('/', (req, res) => {
-    //     res.send("Hello from server");
-    // })
+    app.get('/signup', (req, res) => {
+        res.send("Hello from server");
+    })
 
     app.listen(PORT, () => {
         console.log(`Example app listening at http://localhost:${PORT}`)
